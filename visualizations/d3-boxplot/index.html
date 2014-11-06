@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<link href="style.css" rel="stylesheet"></link>
+<body>
+<script src="d3.js"></script>
+<script src="box.js"></script>
+
+
+<div class="biojs-boxplot"></div>
+
+<script>
+var tmpData = 0;
+
+var margin = {top: 10, right: 50, bottom: 20, left: 50},
+    width = 120 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+/*
+BoxChart 
+*/
+var chart = d3.box()
+    .whiskers(iqr(1.5))
+    .width(width)
+    .height(height)
+    .duration(3000); //Transition duration
+    
+/*
+Checks for the smallest and largest value in the data array
+*/
+function checkDomain(data) {
+  var min = Infinity;
+  var max = -Infinity;
+  var tmpMin;
+  var tmpMax;
+  for (var i = 0; i < data.length; i++) {
+    tmpMin = Math.min.apply(null, data[i]);
+    if(min > tmpMin) {
+      min = tmpMin;
+    }
+    tmpMax = Math.max.apply(null, data[i]);
+    if(max < tmpMax) {
+      max = tmpMax;
+    } 
+  }
+
+  return [min,max];
+}
+
+/*
+Plots the Boxcharts and handles updates, exit and enters
+*/
+function update(data) {
+  chart.domain(checkDomain(data));
+
+  var svg = d3.select(".biojs-boxplot").selectAll("svg")
+      .data(data)
+    .enter().append("svg")
+      .attr("class", "box")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.bottom + margin.top)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+
+  d3.select(".biojs-boxplot").selectAll("svg").call(chart);
+
+  if(data.length < tmpData) {
+    d3.select(".biojs-boxplot").selectAll("svg").data(data).exit().remove();
+  }
+
+  tmpData = data.length;
+}
+
+// Returns a function to compute the interquartile range.
+function iqr(k) {
+  return function(d, i) {
+    var q1 = d.quartiles[0],
+        q3 = d.quartiles[2],
+        iqr = (q3 - q1) * k,
+        i = -1,
+        j = d.length;
+    while (d[++i] < q1 - iqr);
+    while (d[--j] > q3 + iqr);
+    return [i, j];
+    };
+}
+
+//Put in Data
+var data = [[5,6,7,8,9,10],[1,2,32,4,1,2,32]]; //Dummy data!
+update(data);
+
+</script>
+
